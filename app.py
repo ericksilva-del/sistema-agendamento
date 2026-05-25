@@ -172,14 +172,50 @@ st.markdown(f"""
         z-index: 1;
     }}
 
-    /* Botões */
+        /* =========================
+       BOTÕES PREMIUM
+    ========================== */
+
     .stButton > button {{
-        border-radius: 5px !important;
-        font-weight: bold !important;
-        font-size: 0.9rem !important;
-        height: 2.5rem !important;
-        border: none !important;
+        width: 100% !important;
+        height: 3rem !important;
+
+        border-radius: 12px !important;
+
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px !important;
+
+        border: 1px solid rgba(255,255,255,0.08) !important;
+
+        background: linear-gradient(
+            135deg,
+            #1f3a60 0%,
+            #2c5282 100%
+        ) !important;
+
+        color: white !important;
+
+        box-shadow:
+            0 4px 12px rgba(0,0,0,0.35),
+            inset 0 1px 0 rgba(255,255,255,0.05);
+
+        transition: all 0.25s ease !important;
+
         cursor: pointer !important;
+    }}
+
+    .stButton > button:hover {{
+        transform: translateY(-2px);
+        box-shadow:
+            0 8px 20px rgba(0,0,0,0.45),
+            0 0 10px rgba(66,153,225,0.35);
+
+        border: 1px solid rgba(255,255,255,0.15) !important;
+    }}
+
+    .stButton > button:active {{
+        transform: scale(0.98);
     }}
 
     /* Tabela */
@@ -520,13 +556,27 @@ def tela_principal():
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ----------------------------------------------------------------
+     # ----------------------------------------------------------------
     # BOTÕES
     # ----------------------------------------------------------------
-    bc1,bc2,bc3,_ = st.columns([1.5,1.5,1.5,3])
-    with bc1: salvar_btn    = st.button("💾 SALVAR AGENDAMENTO", use_container_width=True)
-    with bc2: relatorio_btn = st.button("📊 GERAR RELATÓRIO",    use_container_width=True)
-    with bc3: refresh_btn   = st.button("🔄 ATUALIZAR TABELA",   use_container_width=True)
+    esp1, bc1, bc2, bc3, esp2 = st.columns([1,1.5,1.5,1.5,1])
+    with bc1:
+        salvar_btn = st.button(
+            "💾 SALVAR AGENDAMENTO",
+            use_container_width=True
+        )
+
+    with bc2:
+        relatorio_btn = st.button(
+            "📊 GERAR RELATÓRIO",
+            use_container_width=True
+        )
+
+    with bc3:
+        refresh_btn = st.button(
+            "🔄 ATUALIZAR TABELA",
+            use_container_width=True
+        )
 
     # ----------------------------------------------------------------
     # SALVAR
