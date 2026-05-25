@@ -9,7 +9,6 @@ from datetime import date, datetime
 from hashlib import sha256
 import io
 import base64
-import json
 import os
 
 # =====================================================================
@@ -23,69 +22,54 @@ st.set_page_config(
 )
 
 # =====================================================================
-# --- CSS GLOBAL (visual escuro + imagem de fundo) ---
+# --- CARREGAR IMAGENS LOCAIS COMO BASE64 ---
 # =====================================================================
-def get_base64_image(path):
-    """Converte imagem local para base64 para usar como fundo."""
+def img_to_b64(path, mime="image/png"):
     try:
         with open(path, "rb") as f:
             data = f.read()
-        return base64.b64encode(data).decode()
+        b64 = base64.b64encode(data).decode()
+        return f"data:{mime};base64,{b64}"
     except:
-        return None
+        return ""
 
-# Caminho da imagem de fundo — ajuste conforme necessário
-CAMINHO_FUNDO = r"C:\Users\erick.silva\Desktop\cardes V3 - usuários\fundo_logistica.png"
-img_b64 = get_base64_image(CAMINHO_FUNDO)
+# Imagens na mesma pasta do app.py (raiz do repositório)
+caminhao_src    = img_to_b64("caminhão.png",     "image/png")
+empilhadeira_src= img_to_b64("empilhadeira.png", "image/png")
+gif_src         = img_to_b64("rodape.gif",       "image/gif")
 
-bg_style = f"""
-    background-image: url("data:image/png;base64,{img_b64}");
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-""" if img_b64 else "background-color: #111921;"
-
+# =====================================================================
+# --- CSS GLOBAL ---
+# =====================================================================
 st.markdown(f"""
 <style>
-    /* Fundo geral */
+    /* Fundo escuro geral */
     .stApp {{
-        {bg_style}
+        background-color: #111921;
     }}
 
-    /* Overlay escuro sobre o fundo */
-    .stApp::before {{
-        content: "";
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(10, 15, 20, 0.72);
-        z-index: 0;
-        pointer-events: none;
-    }}
-
-    /* Todo conteúdo acima do overlay */
     .block-container {{
         position: relative;
         z-index: 1;
-        padding-top: 1rem !important;
+        padding-top: 0.5rem !important;
     }}
 
-    /* Título */
+    /* Título principal maior */
     h1 {{
         color: #ffffff !important;
         text-align: center;
-        font-size: 2rem !important;
-        letter-spacing: 2px;
-        padding: 0.5rem 0 1rem 0;
+        font-size: 2.4rem !important;
+        letter-spacing: 3px;
+        padding: 0.3rem 0 0.8rem 0;
         border-bottom: 1px solid #1f3a60;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }}
 
     h2, h3 {{
         color: #a0aec0 !important;
     }}
 
-    /* Labels dos campos */
+    /* Labels */
     label, .stSelectbox label, .stTextInput label,
     .stDateInput label, .stNumberInput label {{
         color: #a0aec0 !important;
@@ -101,21 +85,19 @@ st.markdown(f"""
         border-radius: 4px !important;
     }}
 
-    /* Selectbox */
     .stSelectbox div[data-baseweb="select"] > div {{
         background-color: #1a222d !important;
         color: #dce3ea !important;
         border: 1px solid #2d3e50 !important;
     }}
 
-    /* DateInput */
     .stDateInput input {{
         background-color: #1a222d !important;
         color: #dce3ea !important;
         border: 1px solid #2d3e50 !important;
     }}
 
-    /* Campos readonly (Tarifa / Total) */
+    /* Campos readonly */
     .readonly-field {{
         background-color: #1a222d;
         color: #e74c3c;
@@ -135,13 +117,59 @@ st.markdown(f"""
         margin-bottom: 2px;
     }}
 
-    /* Frame do formulário */
+    /* Frame formulário com marca d'água */
     .form-container {{
-        background-color: rgba(10, 15, 20, 0.85);
+        background-color: rgba(10, 15, 20, 0.88);
         border: 1px solid #34495e;
         border-radius: 8px;
         padding: 1.2rem 1.5rem;
         margin-bottom: 1rem;
+        position: relative;
+        overflow: hidden;
+    }}
+
+    /* Marca d'água caminhão - esquerda */
+    .form-container::before {{
+        content: "";
+        position: absolute;
+        left: -10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 160px;
+        height: 160px;
+        background-image: url("{caminhao_src}");
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        opacity: 0.10;
+        mix-blend-mode: screen;
+        pointer-events: none;
+        z-index: 0;
+    }}
+
+    /* Marca d'água empilhadeira - direita */
+    .form-container::after {{
+        content: "";
+        position: absolute;
+        right: -10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 160px;
+        height: 160px;
+        background-image: url("{empilhadeira_src}");
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        opacity: 0.10;
+        mix-blend-mode: screen;
+        pointer-events: none;
+        z-index: 0;
+    }}
+
+    /* Conteúdo do form acima das marcas */
+    .form-container > * {{
+        position: relative;
+        z-index: 1;
     }}
 
     /* Botões */
@@ -155,30 +183,19 @@ st.markdown(f"""
     }}
 
     /* Tabela */
-    .stDataFrame {{
-        background-color: transparent !important;
-    }}
-
     .stDataFrame table {{
         background-color: transparent !important;
         color: #dce3ea !important;
     }}
-
     .stDataFrame th {{
         background-color: #0a1118 !important;
         color: #a0aec0 !important;
         font-weight: bold !important;
     }}
-
     .stDataFrame td {{
         background-color: transparent !important;
         color: #dce3ea !important;
         border-bottom: 1px solid #1f2d3d !important;
-    }}
-
-    /* Mensagens */
-    .stAlert {{
-        background-color: rgba(10, 15, 20, 0.85) !important;
     }}
 
     /* Login box */
@@ -188,10 +205,35 @@ st.markdown(f"""
         border-radius: 10px;
         padding: 2rem;
         max-width: 420px;
-        margin: 4rem auto;
+        margin: 2rem auto;
     }}
 
-    /* Esconde menu padrão do Streamlit */
+    /* GIF header row */
+    .header-row {{
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 0.5rem;
+    }}
+
+    .header-gif {{
+        height: 64px;
+        width: auto;
+        flex-shrink: 0;
+    }}
+
+    .header-title {{
+        color: #ffffff;
+        font-size: 2.4rem;
+        font-weight: bold;
+        letter-spacing: 3px;
+        flex: 1;
+        text-align: center;
+        border-bottom: 1px solid #1f3a60;
+        padding-bottom: 0.4rem;
+    }}
+
+    /* Esconde menu padrão */
     #MainMenu, footer, header {{visibility: hidden;}}
 </style>
 """, unsafe_allow_html=True)
@@ -203,20 +245,16 @@ st.markdown(f"""
 @st.cache_resource
 def conectar_sheets():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-
-    # Tenta carregar credenciais do secrets (produção) ou arquivo local
     try:
         creds_dict = dict(st.secrets["gcp_service_account"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     except Exception:
         creds = ServiceAccountCredentials.from_json_keyfile_name("credenciais.json", scope)
-
     client = gspread.authorize(creds)
-    planilha = client.open_by_key("1jq0YByg8407tE1dM_-__r588W6yqgkfjSt824nYURsE")
-    return planilha
+    return client.open_by_key("1jq0YByg8407tE1dM_-__r588W6yqgkfjSt824nYURsE")
 
 try:
-    planilha = conectar_sheets()
+    planilha       = conectar_sheets()
     sheet_dados    = planilha.worksheet("CADASTRO")
     sheet_usuarios = planilha.worksheet("USUARIOS")
 except Exception as e:
@@ -225,7 +263,7 @@ except Exception as e:
 
 
 # =====================================================================
-# --- CARREGAR LISTAS E CONFIGURAÇÕES ---
+# --- CONFIGURAÇÕES ---
 # =====================================================================
 @st.cache_data(ttl=300)
 def carregar_configuracoes():
@@ -238,8 +276,8 @@ def carregar_configuracoes():
             "TIPO CARRO":     planilha.worksheet("TIPO CARRO").col_values(1)[1:],
             "FILIAL":         planilha.worksheet("FILIAL").col_values(1)[1:],
         }
-        aba_val = planilha.worksheet("VALORES").get_all_values()
-        tarifas = {r[0].strip().upper(): r[1] for r in aba_val[1:] if len(r) >= 2}
+        aba_val  = planilha.worksheet("VALORES").get_all_values()
+        tarifas  = {r[0].strip().upper(): r[1] for r in aba_val[1:] if len(r) >= 2}
         clientes = sorted([r[0] for r in aba_val[1:] if len(r) >= 1])
         return listas, clientes, tarifas
     except Exception as e:
@@ -252,170 +290,149 @@ listas, clientes, banco_tarifas = carregar_configuracoes()
 # =====================================================================
 # --- HELPERS ---
 # =====================================================================
-def senha_hash(senha):
-    return sha256(senha.encode("utf-8")).hexdigest()
+def senha_hash(s):   return sha256(s.encode()).hexdigest()
+def normalizar(t):   return str(t).strip().lower()
 
-def normalizar(txt):
-    return str(txt).strip().lower()
+def formatar_moeda(v):
+    try:    return f"R$ {float(v):,.2f}".replace(",","X").replace(".","," ).replace("X",".")
+    except: return "R$ 0,00"
 
-def formatar_moeda(valor):
-    try:
-        return f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    except:
-        return "R$ 0,00"
-
-def parse_moeda(valor):
-    try:
-        return float(str(valor).replace("R$", "").replace(" ", "").replace(".", "").replace(",", "."))
-    except:
-        return 0.0
+def parse_moeda(v):
+    try:    return float(str(v).replace("R$","").replace(" ","").replace(".","").replace(",","."))
+    except: return 0.0
 
 
 # =====================================================================
 # --- USUÁRIOS ---
 # =====================================================================
 def get_usuarios_df():
-    valores = sheet_usuarios.get_all_values()
-    if len(valores) < 2:
+    vals = sheet_usuarios.get_all_values()
+    if len(vals) < 2:
         return pd.DataFrame(columns=["FILIAL","USUARIO_EMAIL","NOME","SENHA_HASH","ATIVO","CRIADO_EM","ULTIMO_LOGIN"])
-    df = pd.DataFrame(valores[1:], columns=valores[0])
+    df = pd.DataFrame(vals[1:], columns=vals[0])
     df.columns = [c.strip().upper() for c in df.columns]
     for col in ["FILIAL","USUARIO_EMAIL","NOME","SENHA_HASH","ATIVO","CRIADO_EM","ULTIMO_LOGIN"]:
-        if col not in df.columns:
-            df[col] = ""
+        if col not in df.columns: df[col] = ""
     return df
 
 def encontrar_usuario(email, filial):
     df = get_usuarios_df()
-    if df.empty:
-        return None
+    if df.empty: return None
     mask = (df["USUARIO_EMAIL"].str.strip().str.lower() == normalizar(email)) & \
            (df["FILIAL"].str.strip().str.lower() == normalizar(filial))
-    if not mask.any():
-        return None
-    return df[mask].iloc[0].to_dict()
+    return df[mask].iloc[0].to_dict() if mask.any() else None
 
 def autenticar_usuario(filial, email, senha):
     u = encontrar_usuario(email, filial)
-    if not u:
-        return False, "Usuário não encontrado para esta filial."
+    if not u: return False, "Usuário não encontrado para esta filial."
     if str(u.get("ATIVO","")).strip().upper() not in ["SIM","S","1","TRUE","ATIVO"]:
         return False, "Usuário inativo."
-    senha_atual = str(u.get("SENHA_HASH","")).strip()
-    if not senha_atual:
-        return None, "SEM_SENHA"
-    if senha_hash(senha) != senha_atual:
-        return False, "Senha inválida."
+    sh = str(u.get("SENHA_HASH","")).strip()
+    if not sh: return None, "SEM_SENHA"
+    if senha_hash(senha) != sh: return False, "Senha inválida."
     return True, u
 
 def criar_usuario(filial, email, nome, senha):
     agora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     u = encontrar_usuario(email, filial)
     if u:
-        # Atualiza senha
-        df = get_usuarios_df()
+        df   = get_usuarios_df()
         mask = (df["USUARIO_EMAIL"].str.strip().str.lower() == normalizar(email)) & \
                (df["FILIAL"].str.strip().str.lower() == normalizar(filial))
-        idx = df[mask].index[0] + 2
-        row = [filial, email, nome, senha_hash(senha), "SIM", u.get("CRIADO_EM", agora), agora]
-        sheet_usuarios.update(f"A{idx}:G{idx}", [row])
+        idx  = df[mask].index[0] + 2
+        sheet_usuarios.update(f"A{idx}:G{idx}", [[filial, email, nome, senha_hash(senha), "SIM", u.get("CRIADO_EM", agora), agora]])
     else:
         sheet_usuarios.append_row([filial, email, nome, senha_hash(senha), "SIM", agora, agora])
 
 def registrar_login(filial, email):
     agora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    df = get_usuarios_df()
-    mask = (df["USUARIO_EMAIL"].str.strip().str.lower() == normalizar(email)) & \
-           (df["FILIAL"].str.strip().str.lower() == normalizar(filial))
+    df    = get_usuarios_df()
+    mask  = (df["USUARIO_EMAIL"].str.strip().str.lower() == normalizar(email)) & \
+            (df["FILIAL"].str.strip().str.lower() == normalizar(filial))
     if mask.any():
-        idx = df[mask].index[0] + 2
-        sheet_usuarios.update(f"G{idx}", [[agora]])
+        sheet_usuarios.update(f"G{df[mask].index[0]+2}", [[agora]])
 
 
 # =====================================================================
 # --- SESSION STATE ---
 # =====================================================================
-if "logado" not in st.session_state:
-    st.session_state.logado       = False
-    st.session_state.usuario      = {}
-    st.session_state.filial       = ""
-    st.session_state.criar_conta  = False
+for k, v in [("logado",False),("usuario",{}),("filial",""),("criar_conta",False),("mostrar_relatorio",False)]:
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+
+# =====================================================================
+# --- CABEÇALHO COM GIF ---
+# =====================================================================
+def render_header():
+    gif_html = f'<img src="{gif_src}" class="header-gif">' if gif_src else ""
+    st.markdown(f"""
+    <div class="header-row">
+        {gif_html}
+        <div class="header-title">🚛 CONTROLE - CARGA E DESCARGA</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # =====================================================================
 # --- TELA DE LOGIN ---
 # =====================================================================
 def tela_login():
-    st.markdown("<h1>🚛 CONTROLE - CARGA E DESCARGA</h1>", unsafe_allow_html=True)
-
-    col_esp1, col_form, col_esp2 = st.columns([1, 1.2, 1])
-    with col_form:
+    render_header()
+    _, col, _ = st.columns([1, 1.2, 1])
+    with col:
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
         st.markdown("### 🔐 Acesso ao Sistema")
-
         filial = st.selectbox("Filial", [""] + listas.get("FILIAL", []), key="login_filial")
         email  = st.text_input("E-mail / Usuário", key="login_email")
         senha  = st.text_input("Senha", type="password", key="login_senha")
-
-        col1, col2 = st.columns(2)
-        with col1:
-            entrar = st.button("✅ ENTRAR", use_container_width=True)
-        with col2:
-            novo   = st.button("➕ CRIAR CONTA", use_container_width=True)
+        c1, c2 = st.columns(2)
+        with c1: entrar = st.button("✅ ENTRAR",       use_container_width=True)
+        with c2: novo   = st.button("➕ CRIAR CONTA",  use_container_width=True)
 
         if entrar:
             if not filial or not email:
                 st.warning("Selecione a filial e informe o e-mail.")
             else:
-                resultado, dados = autenticar_usuario(filial, email, senha)
-                if resultado is True:
-                    st.session_state.logado  = True
-                    st.session_state.usuario = dados
-                    st.session_state.filial  = filial
+                res, dados = autenticar_usuario(filial, email, senha)
+                if res is True:
+                    st.session_state.update(logado=True, usuario=dados, filial=filial)
                     registrar_login(filial, email)
                     st.rerun()
-                elif resultado is None:
-                    st.session_state.criar_conta = True
-                    st.session_state.filial = filial
-                    st.session_state.email_novo = email
+                elif res is None:
+                    st.session_state.update(criar_conta=True, filial=filial, email_novo=email)
                     st.rerun()
                 else:
                     st.error(dados)
 
         if novo:
-            st.session_state.criar_conta = True
-            st.session_state.email_novo  = email
-            st.session_state.filial      = filial
+            st.session_state.update(criar_conta=True, email_novo=email, filial=filial)
             st.rerun()
-
         st.markdown('</div>', unsafe_allow_html=True)
 
 
+# =====================================================================
+# --- TELA CRIAR CONTA ---
+# =====================================================================
 def tela_criar_conta():
-    st.markdown("<h1>🚛 CRIAR CONTA</h1>", unsafe_allow_html=True)
-
-    col_esp1, col_form, col_esp2 = st.columns([1, 1.2, 1])
-    with col_form:
+    render_header()
+    _, col, _ = st.columns([1, 1.2, 1])
+    with col:
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
         st.markdown("### 👤 Novo Usuário")
-
-        filial  = st.selectbox("Filial", [""] + listas.get("FILIAL", []),
-                               index=(listas.get("FILIAL",[]) + [""]).index(st.session_state.filial)
-                               if st.session_state.filial in listas.get("FILIAL",[]) else 0,
-                               key="cc_filial")
-        email   = st.text_input("E-mail", value=st.session_state.get("email_novo",""), key="cc_email")
-        nome    = st.text_input("Nome completo", key="cc_nome")
-        senha1  = st.text_input("Senha", type="password", key="cc_senha1")
-        senha2  = st.text_input("Confirmar senha", type="password", key="cc_senha2")
-
-        col1, col2 = st.columns(2)
-        with col1:
-            salvar = st.button("💾 SALVAR", use_container_width=True)
-        with col2:
-            voltar = st.button("← VOLTAR", use_container_width=True)
+        filial_list = listas.get("FILIAL", [])
+        idx_f = filial_list.index(st.session_state.filial) + 1 if st.session_state.filial in filial_list else 0
+        filial = st.selectbox("Filial", [""] + filial_list, index=idx_f, key="cc_filial")
+        email  = st.text_input("E-mail",          value=st.session_state.get("email_novo",""), key="cc_email")
+        nome   = st.text_input("Nome completo",    key="cc_nome")
+        senha1 = st.text_input("Senha",            type="password", key="cc_senha1")
+        senha2 = st.text_input("Confirmar senha",  type="password", key="cc_senha2")
+        c1, c2 = st.columns(2)
+        with c1: salvar = st.button("💾 SALVAR",  use_container_width=True)
+        with c2: voltar = st.button("← VOLTAR",   use_container_width=True)
 
         if salvar:
-            if not filial or not email or not nome or not senha1:
+            if not all([filial, email, nome, senha1]):
                 st.warning("Preencha todos os campos.")
             elif senha1 != senha2:
                 st.error("As senhas não conferem.")
@@ -424,11 +441,9 @@ def tela_criar_conta():
                 st.success("Conta criada! Faça login.")
                 st.session_state.criar_conta = False
                 st.rerun()
-
         if voltar:
             st.session_state.criar_conta = False
             st.rerun()
-
         st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -436,88 +451,69 @@ def tela_criar_conta():
 # --- TELA PRINCIPAL ---
 # =====================================================================
 def calcular_tarifa(operacao, cliente, peso_str):
-    operacao = operacao.strip().upper()
-    cliente  = cliente.strip().upper()
-
-    if operacao == "SIMBOLOGIA":
-        return 30.0, 30.0
-    elif cliente == "AMAGGI (JANELA <6810KG)":
-        return 150.0, 150.0
-    else:
-        tarifa = parse_moeda(banco_tarifas.get(cliente, "0"))
-        try:
-            peso  = float(str(peso_str).replace(",", ".")) if peso_str else 0.0
-        except:
-            peso  = 0.0
-        total = (peso / 1000) * tarifa
-        return tarifa, total
+    op = operacao.strip().upper()
+    cl = cliente.strip().upper()
+    if op == "SIMBOLOGIA":         return 30.0, 30.0
+    if cl == "AMAGGI (JANELA <6810KG)": return 150.0, 150.0
+    tarifa = parse_moeda(banco_tarifas.get(cl, "0"))
+    try:    peso = float(str(peso_str).replace(",",".")) if peso_str else 0.0
+    except: peso = 0.0
+    return tarifa, (peso / 1000) * tarifa
 
 
 def tela_principal():
     usuario = st.session_state.usuario
     filial  = st.session_state.filial
 
-    # Cabeçalho
-    col_t, col_sair = st.columns([5, 1])
-    with col_t:
-        st.markdown("<h1>🚛 CONTROLE - CARGA E DESCARGA</h1>", unsafe_allow_html=True)
+    # Cabeçalho com GIF
+    col_h, col_sair = st.columns([6, 1])
+    with col_h:
+        gif_html = f'<img src="{gif_src}" class="header-gif">' if gif_src else ""
+        st.markdown(f"""
+        <div class="header-row">
+            {gif_html}
+            <div class="header-title">🚛 CONTROLE - CARGA E DESCARGA</div>
+        </div>
+        """, unsafe_allow_html=True)
     with col_sair:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🚪 Sair", use_container_width=True):
-            for k in ["logado","usuario","filial","criar_conta"]:
-                st.session_state[k] = False if k == "logado" else "" if k in ["filial"] else {}
+            st.session_state.update(logado=False, usuario={}, filial="", criar_conta=False)
             st.rerun()
 
-    nome_usuario = usuario.get("NOME", usuario.get("USUARIO_EMAIL", ""))
-    st.markdown(
-        f'<p style="color:#a0aec0; text-align:right; margin-top:-1rem;">👤 {nome_usuario} &nbsp;|&nbsp; 🏢 {filial}</p>',
-        unsafe_allow_html=True
-    )
+    nome_u = usuario.get("NOME", usuario.get("USUARIO_EMAIL",""))
+    st.markdown(f'<p style="color:#a0aec0;text-align:right;margin-top:-0.5rem;">👤 {nome_u} &nbsp;|&nbsp; 🏢 {filial}</p>',
+                unsafe_allow_html=True)
 
     # ----------------------------------------------------------------
-    # FORMULÁRIO
+    # FORMULÁRIO com marcas d'água
     # ----------------------------------------------------------------
     st.markdown('<div class="form-container">', unsafe_allow_html=True)
 
-    # Linha 1
-    c1, c2, c3, c4, c5 = st.columns([1, 1, 2, 1.5, 1])
-    with c1:
-        cobranca     = st.selectbox("Cobrança",      [""] + listas.get("COBRANÇA", []),      key="f_cobranca")
-    with c2:
-        data_sel     = st.date_input("Data",          value=date.today(),                      key="f_data",
-                                     format="DD/MM/YYYY")
-    with c3:
-        cliente      = st.selectbox("Cliente",        [""] + clientes,                         key="f_cliente")
-    with c4:
-        transportadora = st.selectbox("Transportadora", [""] + listas.get("TRANSPORTADORA",[]), key="f_transp")
-    with c5:
-        placa        = st.text_input("Placa",                                                   key="f_placa")
+    c1,c2,c3,c4,c5 = st.columns([1,1,2,1.5,1])
+    with c1: cobranca       = st.selectbox("Cobrança",        [""] + listas.get("COBRANÇA",[]),       key="f_cob")
+    with c2: data_sel       = st.date_input("Data",           value=date.today(), key="f_data", format="DD/MM/YYYY")
+    with c3: cliente        = st.selectbox("Cliente",         [""] + clientes,                        key="f_cli")
+    with c4: transportadora = st.selectbox("Transportadora",  [""] + listas.get("TRANSPORTADORA",[]), key="f_tra")
+    with c5: placa          = st.text_input("Placa",                                                   key="f_pla")
 
-    # Linha 2
-    c1, c2, c3, c4, c5 = st.columns([1, 1, 2, 1.5, 1])
-    with c1:
-        peso         = st.text_input("Peso (kg)",                                               key="f_peso")
-    with c2:
-        notas        = st.text_input("Notas Fiscais",                                           key="f_notas")
-    with c3:
-        tipo_carga   = st.selectbox("Tipo Carga",    [""] + listas.get("TIPO CARGA", []),      key="f_tcarga")
-    with c4:
-        operacao     = st.selectbox("Operação",      [""] + listas.get("OPERAÇÃO", []),        key="f_op")
-    with c5:
-        tipo_carro   = st.selectbox("Tipo de Carro", [""] + listas.get("TIPO CARRO", []),      key="f_tcarro")
+    c1,c2,c3,c4,c5 = st.columns([1,1,2,1.5,1])
+    with c1: peso       = st.text_input("Peso (kg)",                                              key="f_pes")
+    with c2: notas      = st.text_input("Notas Fiscais",                                          key="f_not")
+    with c3: tipo_carga = st.selectbox("Tipo Carga",     [""] + listas.get("TIPO CARGA",[]),      key="f_tca")
+    with c4: operacao   = st.selectbox("Operação",       [""] + listas.get("OPERAÇÃO",[]),        key="f_ope")
+    with c5: tipo_carro = st.selectbox("Tipo de Carro",  [""] + listas.get("TIPO CARRO",[]),      key="f_tco")
 
-    # Linha 3 — Tarifa, Total, Obs, Filial
     tarifa_val, total_val = calcular_tarifa(operacao, cliente, peso)
 
-    c1, c2, c3, c4 = st.columns([1, 1, 2, 1])
+    c1,c2,c3,c4 = st.columns([1,1,2,1])
     with c1:
         st.markdown('<p class="readonly-label">Tarifa</p>', unsafe_allow_html=True)
         st.markdown(f'<div class="readonly-field">{formatar_moeda(tarifa_val)}</div>', unsafe_allow_html=True)
     with c2:
         st.markdown('<p class="readonly-label">Total a Cobrar</p>', unsafe_allow_html=True)
         st.markdown(f'<div class="readonly-field">{formatar_moeda(total_val)}</div>', unsafe_allow_html=True)
-    with c3:
-        obs          = st.text_input("Observação",                                              key="f_obs")
+    with c3: obs = st.text_input("Observação", key="f_obs")
     with c4:
         st.markdown(f'<p class="readonly-label">Filial</p><div class="readonly-field">{filial}</div>',
                     unsafe_allow_html=True)
@@ -527,53 +523,28 @@ def tela_principal():
     # ----------------------------------------------------------------
     # BOTÕES
     # ----------------------------------------------------------------
-    bc1, bc2, bc3, bc4 = st.columns([1.5, 1.5, 1.5, 3])
-    with bc1:
-        salvar_btn = st.button("💾 SALVAR AGENDAMENTO", use_container_width=True)
-    with bc2:
-        relatorio_btn = st.button("📊 GERAR RELATÓRIO", use_container_width=True)
-    with bc3:
-        refresh_btn = st.button("🔄 ATUALIZAR TABELA", use_container_width=True)
+    bc1,bc2,bc3,_ = st.columns([1.5,1.5,1.5,3])
+    with bc1: salvar_btn    = st.button("💾 SALVAR AGENDAMENTO", use_container_width=True)
+    with bc2: relatorio_btn = st.button("📊 GERAR RELATÓRIO",    use_container_width=True)
+    with bc3: refresh_btn   = st.button("🔄 ATUALIZAR TABELA",   use_container_width=True)
 
     # ----------------------------------------------------------------
     # SALVAR
     # ----------------------------------------------------------------
     if salvar_btn:
-        campos_obrigatorios = {
-            "Cobrança": cobranca, "Cliente": cliente,
-            "Transportadora": transportadora, "Placa": placa,
-            "Peso": peso, "Notas Fiscais": notas,
-            "Tipo Carga": tipo_carga, "Operação": operacao,
-            "Tipo de Carro": tipo_carro
-        }
-        faltando = [k for k, v in campos_obrigatorios.items() if not str(v).strip()]
+        obrig = {"Cobrança":cobranca,"Cliente":cliente,"Transportadora":transportadora,
+                 "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
+                 "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
+        faltando = [k for k,v in obrig.items() if not str(v).strip()]
         if faltando:
             st.warning(f"Campo(s) obrigatório(s): {', '.join(faltando)}")
         else:
             data_fmt = data_sel.strftime("%d/%m/%Y")
-            # Verifica duplicidade
-            try:
-                vals = sheet_dados.get_all_values()
-                if len(vals) > 1:
-                    df_c = pd.DataFrame(vals[1:], columns=vals[0])
-                    df_c.columns = [c.strip().upper() for c in df_c.columns]
-                    dup = df_c[
-                        (df_c.get("DATA","") == data_fmt) &
-                        (df_c.get("CLIENTE","").str.upper() == cliente.upper()) &
-                        (df_c.get("PLACA","").str.upper() == placa.upper())
-                    ]
-                    if not dup.empty:
-                        st.warning("⚠️ Registro duplicado encontrado. Verifique antes de salvar novamente.")
-            except:
-                pass
-
-            linha = [
-                cobranca, data_fmt, cliente, transportadora, placa,
-                peso, notas, tipo_carga, operacao, tipo_carro,
-                tarifa_val, total_val, obs, filial,
-                usuario.get("USUARIO_EMAIL",""),
-                datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-            ]
+            linha = [cobranca, data_fmt, cliente, transportadora, placa,
+                     peso, notas, tipo_carga, operacao, tipo_carro,
+                     tarifa_val, total_val, obs, filial,
+                     usuario.get("USUARIO_EMAIL",""),
+                     datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
             try:
                 sheet_dados.append_row(linha)
                 st.success("✅ Agendamento salvo com sucesso!")
@@ -587,72 +558,57 @@ def tela_principal():
     if relatorio_btn:
         st.session_state.mostrar_relatorio = True
 
-    if st.session_state.get("mostrar_relatorio"):
+    if st.session_state.mostrar_relatorio:
         with st.expander("📅 Período do Relatório", expanded=True):
-            rc1, rc2, rc3 = st.columns([1, 1, 1])
-            with rc1:
-                d_ini = st.date_input("De", value=date.today(), key="r_ini", format="DD/MM/YYYY")
-            with rc2:
-                d_fim = st.date_input("Até", value=date.today(), key="r_fim", format="DD/MM/YYYY")
+            rc1,rc2,rc3 = st.columns([1,1,1])
+            with rc1: d_ini = st.date_input("De",   value=date.today(), key="r_ini", format="DD/MM/YYYY")
+            with rc2: d_fim = st.date_input("Até",  value=date.today(), key="r_fim", format="DD/MM/YYYY")
             with rc3:
                 st.markdown("<br>", unsafe_allow_html=True)
-                gerar = st.button("⬇️ BAIXAR EXCEL", use_container_width=True)
-
-            if gerar:
-                try:
-                    vals = sheet_dados.get_all_values()
-                    df = pd.DataFrame(vals[1:], columns=vals[0])
-                    df.columns = [c.strip().upper() for c in df.columns]
-                    df["DATA"] = pd.to_datetime(df["DATA"], format="%d/%m/%Y", errors="coerce")
-                    df = df.dropna(subset=["DATA"])
-                    df_f = df[
-                        (df["DATA"].dt.date >= d_ini) &
-                        (df["DATA"].dt.date <= d_fim) &
-                        (df["FILIAL"].str.upper() == filial.upper())
-                    ].copy()
-
-                    if df_f.empty:
-                        st.warning("Nenhum dado encontrado no período.")
-                    else:
-                        df_f["DATA"] = df_f["DATA"].dt.strftime("%d/%m/%Y")
-                        if "USUARIO_EMAIL" in df_f.columns:
-                            df_f.rename(columns={"USUARIO_EMAIL":"USUARIO"}, inplace=True)
-
-                        buffer = io.BytesIO()
-                        df_f.to_excel(buffer, index=False)
-                        buffer.seek(0)
-                        nome_arq = f"Relatorio_{filial}_{datetime.now().strftime('%d%m%Y')}.xlsx"
-                        st.download_button("📥 Clique para baixar", buffer, nome_arq,
-                                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                except Exception as e:
-                    st.error(f"Erro ao gerar relatório: {e}")
+                if st.button("⬇️ BAIXAR EXCEL", use_container_width=True):
+                    try:
+                        vals = sheet_dados.get_all_values()
+                        df   = pd.DataFrame(vals[1:], columns=vals[0])
+                        df.columns = [c.strip().upper() for c in df.columns]
+                        df["DATA"] = pd.to_datetime(df["DATA"], format="%d/%m/%Y", errors="coerce")
+                        df = df.dropna(subset=["DATA"])
+                        df_f = df[(df["DATA"].dt.date >= d_ini) &
+                                  (df["DATA"].dt.date <= d_fim) &
+                                  (df["FILIAL"].str.upper() == filial.upper())].copy()
+                        if df_f.empty:
+                            st.warning("Nenhum dado encontrado no período.")
+                        else:
+                            df_f["DATA"] = df_f["DATA"].dt.strftime("%d/%m/%Y")
+                            if "USUARIO_EMAIL" in df_f.columns:
+                                df_f.rename(columns={"USUARIO_EMAIL":"USUARIO"}, inplace=True)
+                            buf = io.BytesIO()
+                            df_f.to_excel(buf, index=False)
+                            buf.seek(0)
+                            st.download_button("📥 Clique para baixar", buf,
+                                f"Relatorio_{filial}_{datetime.now().strftime('%d%m%Y')}.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    except Exception as e:
+                        st.error(f"Erro: {e}")
 
     # ----------------------------------------------------------------
     # TABELA
     # ----------------------------------------------------------------
     st.markdown("---")
-    st.markdown('<p style="color:#a0aec0; font-size:0.85rem; margin-bottom:0.3rem;">📋 Agendamentos da filial (mais recentes primeiro)</p>',
+    st.markdown('<p style="color:#a0aec0;font-size:0.85rem;margin-bottom:0.3rem;">📋 Agendamentos da filial (mais recentes primeiro)</p>',
                 unsafe_allow_html=True)
     try:
         vals = sheet_dados.get_all_values()
         if len(vals) > 1:
-            df = pd.DataFrame(vals[1:], columns=vals[0])
+            df   = pd.DataFrame(vals[1:], columns=vals[0])
             df.columns = [c.strip().upper() for c in df.columns]
             df_f = df[df["FILIAL"].str.upper() == filial.upper()].iloc[::-1].reset_index(drop=True)
             df_f.index += 1
             df_f.index.name = "#"
-
-            # Colunas para exibir
-            colunas_exibir = ["COBRANÇA","DATA","CLIENTE","TRANSPORTADORA","PLACA",
-                               "PESO","NOTAS FISCAIS","TIPO CARGA","OPERAÇÃO",
-                               "TIPO DE CARRO","TARIFA","TOTAL A COBRAR","OBSERVAÇÃO"]
-            colunas_exibir = [c for c in colunas_exibir if c in df_f.columns]
-
-            st.dataframe(
-                df_f[colunas_exibir],
-                use_container_width=True,
-                height=380
-            )
+            cols = ["COBRANÇA","DATA","CLIENTE","TRANSPORTADORA","PLACA","PESO",
+                    "NOTAS FISCAIS","TIPO CARGA","OPERAÇÃO","TIPO DE CARRO",
+                    "TARIFA","TOTAL A COBRAR","OBSERVAÇÃO"]
+            cols = [c for c in cols if c in df_f.columns]
+            st.dataframe(df_f[cols], use_container_width=True, height=380)
         else:
             st.info("Nenhum agendamento encontrado.")
     except Exception as e:
