@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 import streamlit as st
 import pandas as pd
 import gspread
@@ -11,6 +12,7 @@ import io
 import base64
 import os
 
+
 # =====================================================================
 # --- CONFIGURAÇÃO DA PÁGINA ---
 # =====================================================================
@@ -20,6 +22,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
 
 # =====================================================================
 # --- CARREGAR IMAGENS LOCAIS COMO BASE64 ---
@@ -33,21 +36,20 @@ def img_to_b64(path, mime="image/png"):
     except:
         return ""
 
-# Imagens na mesma pasta do app.py (raiz do repositório)
+
 caminhao_src    = img_to_b64("caminhão.png",     "image/png")
 empilhadeira_src= img_to_b64("empilhadeira.png", "image/png")
 gif_src         = img_to_b64("rodape.gif",       "image/gif")
+
 
 # =====================================================================
 # --- CSS GLOBAL ---
 # =====================================================================
 st.markdown(f"""
 <style>
-    /* Fundo escuro geral */
     .stApp {{
         background-color: #111921;
     }}
-
 
     .block-container {{
         position: relative;
@@ -55,8 +57,6 @@ st.markdown(f"""
         padding-top: 0.5rem !important;
     }}
 
-
-    /* Título principal maior */
     h1 {{
         color: #ffffff !important;
         text-align: center;
@@ -67,13 +67,10 @@ st.markdown(f"""
         margin-bottom: 1rem;
     }}
 
-
     h2, h3 {{
         color: #a0aec0 !important;
     }}
 
-
-    /* Labels */
     label, .stSelectbox label, .stTextInput label,
     .stDateInput label, .stNumberInput label {{
         color: #a0aec0 !important;
@@ -81,8 +78,6 @@ st.markdown(f"""
         font-size: 0.82rem !important;
     }}
 
-
-    /* Inputs */
     .stTextInput input, .stNumberInput input {{
         background-color: #1a222d !important;
         color: #dce3ea !important;
@@ -90,13 +85,11 @@ st.markdown(f"""
         border-radius: 4px !important;
     }}
 
-
     .stSelectbox div[data-baseweb="select"] > div {{
         background-color: #1a222d !important;
         color: #dce3ea !important;
         border: 1px solid #2d3e50 !important;
     }}
-
 
     .stDateInput input {{
         background-color: #1a222d !important;
@@ -104,8 +97,6 @@ st.markdown(f"""
         border: 1px solid #2d3e50 !important;
     }}
 
-
-    /* Campos readonly */
     .readonly-field {{
         background-color: #1a222d;
         color: #e74c3c;
@@ -118,7 +109,6 @@ st.markdown(f"""
         margin-top: 4px;
     }}
 
-
     .readonly-label {{
         color: #a0aec0;
         font-size: 0.82rem;
@@ -126,8 +116,6 @@ st.markdown(f"""
         margin-bottom: 2px;
     }}
 
-
-    /* Frame formulário com marca d'água */
     .form-container {{
         background-color: rgba(10, 15, 20, 0.88);
         border: 1px solid #34495e;
@@ -138,8 +126,6 @@ st.markdown(f"""
         overflow: hidden;
     }}
 
-
-    /* Marca d'água caminhão - esquerda */
     .form-container::before {{
         content: "";
         position: absolute;
@@ -158,8 +144,6 @@ st.markdown(f"""
         z-index: 0;
     }}
 
-
-    /* Marca d'água empilhadeira - direita */
     .form-container::after {{
         content: "";
         position: absolute;
@@ -178,107 +162,56 @@ st.markdown(f"""
         z-index: 0;
     }}
 
-
-    /* Conteúdo do form acima das marcas */
     .form-container > * {{
         position: relative;
         z-index: 1;
     }}
 
-
-        /* =========================
-       BOTÕES PREMIUM
-    ========================== */
-
-
     .stButton > button {{
         width: 100% !important;
         height: 3rem !important;
-
-
         border-radius: 12px !important;
-
-
         font-size: 0.95rem !important;
         font-weight: 700 !important;
         letter-spacing: 0.5px !important;
-
-
         border: 1px solid rgba(255,255,255,0.08) !important;
-
-
-        background: linear-gradient(
-            135deg,
-            #1f3a60 0%,
-            #2c5282 100%
-        ) !important;
-
-
+        background: linear-gradient(135deg, #1f3a60 0%, #2c5282 100%) !important;
         color: white !important;
-
-
-        box-shadow:
-            0 4px 12px rgba(0,0,0,0.35),
-            inset 0 1px 0 rgba(255,255,255,0.05);
-
-
+        box-shadow: 0 4px 12px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
         transition: all 0.25s ease !important;
-
-
         cursor: pointer !important;
     }}
 
-
     .stButton > button:hover {{
         transform: translateY(-2px);
-        box-shadow:
-            0 8px 20px rgba(0,0,0,0.45),
-            0 0 10px rgba(66,153,225,0.35);
-
-
+        box-shadow: 0 8px 20px rgba(0,0,0,0.45), 0 0 10px rgba(66,153,225,0.35);
         border: 1px solid rgba(255,255,255,0.15) !important;
     }}
-
 
     .stButton > button:active {{
         transform: scale(0.98);
     }}
 
-
-    /* =========================
-   BOTÕES COM CORES DIFERENTES  ← ADICIONAR ESSA PARTE NOVA
-========================= */
-
-
-    /* Salvar Agendamento - VERDE */
     button[key="btn_salvar"] {{
         background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
         border: 1px solid rgba(46, 204, 113, 0.3) !important;
     }}
 
-
-    /* Gerar Relatório - AZUL */
     button[key="btn_relatorio"] {{
         background: linear-gradient(135deg, #2980b9 0%, #3498db 100%) !important;
         border: 1px solid rgba(52, 152, 219, 0.3) !important;
     }}
 
-
-    /* Atualizar Tabela - LARANJA */
     button[key="btn_atualizar"] {{
         background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%) !important;
         border: 1px solid rgba(243, 156, 18, 0.3) !important;
     }}
 
-
-    /* Sair - VERMELHO */
     button[label*="Sair"] {{
         background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%) !important;
         border: 1px solid rgba(231, 76, 60, 0.3) !important;
     }}
 
-
-    /* Tabela */
     .stDataFrame table {{
         background-color: transparent !important;
         color: #dce3ea !important;
@@ -294,8 +227,6 @@ st.markdown(f"""
         border-bottom: 1px solid #1f2d3d !important;
     }}
 
-
-    /* Login box */
     .login-box {{
         background-color: rgba(10, 15, 20, 0.90);
         border: 1px solid #34495e;
@@ -305,8 +236,6 @@ st.markdown(f"""
         margin: 2rem auto;
     }}
 
-
-    /* GIF header row */
     .header-row {{
         display: flex;
         align-items: center;
@@ -314,13 +243,11 @@ st.markdown(f"""
         margin-bottom: 0.5rem;
     }}
 
-
     .header-gif {{
         height: 64px;
         width: auto;
         flex-shrink: 0;
     }}
-
 
     .header-title {{
         color: #ffffff;
@@ -333,8 +260,6 @@ st.markdown(f"""
         padding-bottom: 0.4rem;
     }}
 
-
-    /* Esconde menu padrão */
     #MainMenu, footer, header {{visibility: hidden;}}
 </style>
 """, unsafe_allow_html=True)
@@ -353,6 +278,7 @@ def conectar_sheets():
         creds = ServiceAccountCredentials.from_json_keyfile_name("credenciais.json", scope)
     client = gspread.authorize(creds)
     return client.open_by_key("1jq0YByg8407tE1dM_-__r588W6yqgkfjSt824nYURsE")
+
 
 try:
     planilha       = conectar_sheets()
@@ -385,6 +311,7 @@ def carregar_configuracoes():
         st.error(f"Erro ao carregar configurações: {e}")
         return {}, [], {}
 
+
 listas, clientes, banco_tarifas = carregar_configuracoes()
 
 
@@ -394,12 +321,14 @@ listas, clientes, banco_tarifas = carregar_configuracoes()
 def senha_hash(s):   return sha256(s.encode()).hexdigest()
 def normalizar(t):   return str(t).strip().lower()
 
+
 def formatar_moeda(v):
-    try:    return f"R$ {float(v):,.2f}".replace(",","X").replace(".","," ).replace("X",".")
+    try:   return f"R$ {float(v):,.2f}".replace(",","X").replace(".","," ).replace("X",".")
     except: return "R$ 0,00"
 
+
 def parse_moeda(v):
-    try:    return float(str(v).replace("R$","").replace(" ","").replace(".","").replace(",","."))
+    try:   return float(str(v).replace("R$","").replace(" ","").replace(".","").replace(",","."))
     except: return 0.0
 
 
@@ -416,12 +345,14 @@ def get_usuarios_df():
         if col not in df.columns: df[col] = ""
     return df
 
+
 def encontrar_usuario(email, filial):
     df = get_usuarios_df()
     if df.empty: return None
     mask = (df["USUARIO_EMAIL"].str.strip().str.lower() == normalizar(email)) & \
            (df["FILIAL"].str.strip().str.lower() == normalizar(filial))
     return df[mask].iloc[0].to_dict() if mask.any() else None
+
 
 def autenticar_usuario(filial, email, senha):
     u = encontrar_usuario(email, filial)
@@ -432,6 +363,7 @@ def autenticar_usuario(filial, email, senha):
     if not sh: return None, "SEM_SENHA"
     if senha_hash(senha) != sh: return False, "Senha inválida."
     return True, u
+
 
 def criar_usuario(filial, email, nome, senha):
     agora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -444,6 +376,7 @@ def criar_usuario(filial, email, nome, senha):
         sheet_usuarios.update(f"A{idx}:G{idx}", [[filial, email, nome, senha_hash(senha), "SIM", u.get("CRIADO_EM", agora), agora]])
     else:
         sheet_usuarios.append_row([filial, email, nome, senha_hash(senha), "SIM", agora, agora])
+
 
 def registrar_login(filial, email):
     agora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -557,7 +490,7 @@ def calcular_tarifa(operacao, cliente, peso_str):
     if op == "SIMBOLOGIA":         return 30.0, 30.0
     if cl == "AMAGGI (JANELA <6810KG)": return 150.0, 150.0
     tarifa = parse_moeda(banco_tarifas.get(cl, "0"))
-    try:    peso = float(str(peso_str).replace(",",".")) if peso_str else 0.0
+    try:   peso = float(str(peso_str).replace(",",".")) if peso_str else 0.0
     except: peso = 0.0
     return tarifa, (peso / 1000) * tarifa
 
@@ -566,7 +499,6 @@ def tela_principal():
     usuario = st.session_state.usuario
     filial  = st.session_state.filial
 
-    # Cabeçalho com GIF
     col_h, col_sair = st.columns([6, 1])
     with col_h:
         gif_html = f'<img src="{gif_src}" class="header-gif">' if gif_src else ""
@@ -586,9 +518,6 @@ def tela_principal():
     st.markdown(f'<p style="color:#a0aec0;text-align:right;margin-top:-0.5rem;">👤 {nome_u} &nbsp;|&nbsp; 🏢 {filial}</p>',
                 unsafe_allow_html=True)
 
-    # ----------------------------------------------------------------
-    # FORMULÁRIO com marcas d'água
-    # ----------------------------------------------------------------
     st.markdown('<div class="form-container">', unsafe_allow_html=True)
 
     c1,c2,c3,c4,c5 = st.columns([1,1,2,1.5,1])
@@ -596,14 +525,14 @@ def tela_principal():
     with c2: data_sel       = st.date_input("Data",           value=date.today(), key="f_data", format="DD/MM/YYYY")
     with c3: cliente        = st.selectbox("Cliente",         [""] + clientes,                        key="f_cli")
     with c4: transportadora = st.selectbox("Transportadora",  [""] + listas.get("TRANSPORTADORA",[]), key="f_tra")
-    with c5: placa          = st.text_input("Placa",                                                   key="f_pla")
+    with c5: placa          = st.text_input("Placa",                                                  key="f_pla")
 
     c1,c2,c3,c4,c5 = st.columns([1,1,2,1.5,1])
-    with c1: peso       = st.text_input("Peso (kg)",                                              key="f_pes")
-    with c2: notas      = st.text_input("Notas Fiscais",                                          key="f_not")
-    with c3: tipo_carga = st.selectbox("Tipo Carga",     [""] + listas.get("TIPO CARGA",[]),      key="f_tca")
-    with c4: operacao   = st.selectbox("Operação",       [""] + listas.get("OPERAÇÃO",[]),        key="f_ope")
-    with c5: tipo_carro = st.selectbox("Tipo de Carro",  [""] + listas.get("TIPO CARRO",[]),      key="f_tco")
+    with c1: peso       = st.text_input("Peso (kg)",                                                  key="f_pes")
+    with c2: notas      = st.text_input("Notas Fiscais",                                              key="f_not")
+    with c3: tipo_carga = st.selectbox("Tipo Carga",   [""] + listas.get("TIPO CARGA",[]),  key="f_tca")
+    with c4: operacao   = st.selectbox("Operação",     [""] + listas.get("OPERAÇÃO",[]),    key="f_ope")
+    with c5: tipo_carro = st.selectbox("Tipo de Carro", [""] + listas.get("TIPO CARRO",[]), key="f_tco")
 
     tarifa_val, total_val = calcular_tarifa(operacao, cliente, peso)
 
@@ -621,41 +550,36 @@ def tela_principal():
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-     # ----------------------------------------------------------------
-    # BOTÕES
-    # ----------------------------------------------------------------
     esp1, bc1, bc2, bc3, esp2 = st.columns([1,1.5,1.5,1.5,1])
     with bc1:
         salvar_btn = st.button(
             "💾 SALVAR AGENDAMENTO",
             use_container_width=True,
-            key="btn_salvar"    # ← ADICIONAR ESSA LINHA
+            key="btn_salvar"
         )
-
 
     with bc2:
         relatorio_btn = st.button(
             "📊 GERAR RELATÓRIO",
             use_container_width=True,
-            key="btn_relatorio"    # ← ADICIONAR ESSA LINHA
+            key="btn_relatorio"
         )
-
 
     with bc3:
         refresh_btn = st.button(
             "🔄 ATUALIZAR TABELA",
             use_container_width=True,
-            key="btn_atualizar"    # ← ADICIONAR ESSA LINHA
+            key="btn_atualizar"
         )
 
-    # ----------------------------------------------------------------
-    # SALVAR
-    # ----------------------------------------------------------------
+    faltando = []
+
     if salvar_btn:
         obrig = {"Cobrança":cobranca,"Cliente":cliente,"Transportadora":transportadora,
-             "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
-             "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
+                 "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
+                 "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
         faltando = [k for k,v in obrig.items() if not str(v).strip()]
+
     if faltando:
         st.warning(f"Campo(s) obrigatório(s): {', '.join(faltando)}")
     else:
@@ -702,10 +626,6 @@ def tela_principal():
         except Exception as e:
             st.error(f"Erro ao salvar: {e}")
 
-
-    # ----------------------------------------------------------------
-    # RELATÓRIO
-    # ----------------------------------------------------------------
     if relatorio_btn:
         st.session_state.mostrar_relatorio = True
 
@@ -741,9 +661,6 @@ def tela_principal():
                     except Exception as e:
                         st.error(f"Erro: {e}")
 
-    # ----------------------------------------------------------------
-    # TABELA
-    # ----------------------------------------------------------------
     st.markdown("---")
     st.markdown('<p style="color:#a0aec0;font-size:0.85rem;margin-bottom:0.3rem;">📋 Agendamentos da filial (mais recentes primeiro)</p>',
                 unsafe_allow_html=True)
