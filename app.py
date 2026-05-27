@@ -48,11 +48,13 @@ st.markdown(f"""
         background-color: #111921;
     }}
 
+
     .block-container {{
         position: relative;
         z-index: 1;
         padding-top: 0.5rem !important;
     }}
+
 
     /* Título principal maior */
     h1 {{
@@ -65,9 +67,11 @@ st.markdown(f"""
         margin-bottom: 1rem;
     }}
 
+
     h2, h3 {{
         color: #a0aec0 !important;
     }}
+
 
     /* Labels */
     label, .stSelectbox label, .stTextInput label,
@@ -77,6 +81,7 @@ st.markdown(f"""
         font-size: 0.82rem !important;
     }}
 
+
     /* Inputs */
     .stTextInput input, .stNumberInput input {{
         background-color: #1a222d !important;
@@ -85,17 +90,20 @@ st.markdown(f"""
         border-radius: 4px !important;
     }}
 
+
     .stSelectbox div[data-baseweb="select"] > div {{
         background-color: #1a222d !important;
         color: #dce3ea !important;
         border: 1px solid #2d3e50 !important;
     }}
 
+
     .stDateInput input {{
         background-color: #1a222d !important;
         color: #dce3ea !important;
         border: 1px solid #2d3e50 !important;
     }}
+
 
     /* Campos readonly */
     .readonly-field {{
@@ -110,12 +118,14 @@ st.markdown(f"""
         margin-top: 4px;
     }}
 
+
     .readonly-label {{
         color: #a0aec0;
         font-size: 0.82rem;
         font-weight: bold;
         margin-bottom: 2px;
     }}
+
 
     /* Frame formulário com marca d'água */
     .form-container {{
@@ -127,6 +137,7 @@ st.markdown(f"""
         position: relative;
         overflow: hidden;
     }}
+
 
     /* Marca d'água caminhão - esquerda */
     .form-container::before {{
@@ -147,6 +158,7 @@ st.markdown(f"""
         z-index: 0;
     }}
 
+
     /* Marca d'água empilhadeira - direita */
     .form-container::after {{
         content: "";
@@ -166,27 +178,34 @@ st.markdown(f"""
         z-index: 0;
     }}
 
+
     /* Conteúdo do form acima das marcas */
     .form-container > * {{
         position: relative;
         z-index: 1;
     }}
 
+
         /* =========================
        BOTÕES PREMIUM
     ========================== */
+
 
     .stButton > button {{
         width: 100% !important;
         height: 3rem !important;
 
+
         border-radius: 12px !important;
+
 
         font-size: 0.95rem !important;
         font-weight: 700 !important;
         letter-spacing: 0.5px !important;
 
+
         border: 1px solid rgba(255,255,255,0.08) !important;
+
 
         background: linear-gradient(
             135deg,
@@ -194,16 +213,21 @@ st.markdown(f"""
             #2c5282 100%
         ) !important;
 
+
         color: white !important;
+
 
         box-shadow:
             0 4px 12px rgba(0,0,0,0.35),
             inset 0 1px 0 rgba(255,255,255,0.05);
 
+
         transition: all 0.25s ease !important;
+
 
         cursor: pointer !important;
     }}
+
 
     .stButton > button:hover {{
         transform: translateY(-2px);
@@ -211,12 +235,48 @@ st.markdown(f"""
             0 8px 20px rgba(0,0,0,0.45),
             0 0 10px rgba(66,153,225,0.35);
 
+
         border: 1px solid rgba(255,255,255,0.15) !important;
     }}
+
 
     .stButton > button:active {{
         transform: scale(0.98);
     }}
+
+
+    /* =========================
+   BOTÕES COM CORES DIFERENTES  ← ADICIONAR ESSA PARTE NOVA
+========================= */
+
+
+    /* Salvar Agendamento - VERDE */
+    button[key="btn_salvar"] {{
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
+        border: 1px solid rgba(46, 204, 113, 0.3) !important;
+    }}
+
+
+    /* Gerar Relatório - AZUL */
+    button[key="btn_relatorio"] {{
+        background: linear-gradient(135deg, #2980b9 0%, #3498db 100%) !important;
+        border: 1px solid rgba(52, 152, 219, 0.3) !important;
+    }}
+
+
+    /* Atualizar Tabela - LARANJA */
+    button[key="btn_atualizar"] {{
+        background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%) !important;
+        border: 1px solid rgba(243, 156, 18, 0.3) !important;
+    }}
+
+
+    /* Sair - VERMELHO */
+    button[label*="Sair"] {{
+        background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%) !important;
+        border: 1px solid rgba(231, 76, 60, 0.3) !important;
+    }}
+
 
     /* Tabela */
     .stDataFrame table {{
@@ -234,6 +294,7 @@ st.markdown(f"""
         border-bottom: 1px solid #1f2d3d !important;
     }}
 
+
     /* Login box */
     .login-box {{
         background-color: rgba(10, 15, 20, 0.90);
@@ -244,6 +305,7 @@ st.markdown(f"""
         margin: 2rem auto;
     }}
 
+
     /* GIF header row */
     .header-row {{
         display: flex;
@@ -252,11 +314,13 @@ st.markdown(f"""
         margin-bottom: 0.5rem;
     }}
 
+
     .header-gif {{
         height: 64px;
         width: auto;
         flex-shrink: 0;
     }}
+
 
     .header-title {{
         color: #ffffff;
@@ -268,6 +332,7 @@ st.markdown(f"""
         border-bottom: 1px solid #1f3a60;
         padding-bottom: 0.4rem;
     }}
+
 
     /* Esconde menu padrão */
     #MainMenu, footer, header {{visibility: hidden;}}
@@ -563,19 +628,24 @@ def tela_principal():
     with bc1:
         salvar_btn = st.button(
             "💾 SALVAR AGENDAMENTO",
-            use_container_width=True
+            use_container_width=True,
+            key="btn_salvar"    # ← ADICIONAR ESSA LINHA
         )
+
 
     with bc2:
         relatorio_btn = st.button(
             "📊 GERAR RELATÓRIO",
-            use_container_width=True
+            use_container_width=True,
+            key="btn_relatorio"    # ← ADICIONAR ESSA LINHA
         )
+
 
     with bc3:
         refresh_btn = st.button(
             "🔄 ATUALIZAR TABELA",
-            use_container_width=True
+            use_container_width=True,
+            key="btn_atualizar"    # ← ADICIONAR ESSA LINHA
         )
 
     # ----------------------------------------------------------------
@@ -583,24 +653,55 @@ def tela_principal():
     # ----------------------------------------------------------------
     if salvar_btn:
         obrig = {"Cobrança":cobranca,"Cliente":cliente,"Transportadora":transportadora,
-                 "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
-                 "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
+             "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
+             "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
         faltando = [k for k,v in obrig.items() if not str(v).strip()]
-        if faltando:
-            st.warning(f"Campo(s) obrigatório(s): {', '.join(faltando)}")
-        else:
-            data_fmt = data_sel.strftime("%d/%m/%Y")
-            linha = [cobranca, data_fmt, cliente, transportadora, placa,
-                     peso, notas, tipo_carga, operacao, tipo_carro,
-                     tarifa_val, total_val, obs, filial,
-                     usuario.get("USUARIO_EMAIL",""),
-                     datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
-            try:
+    if faltando:
+        st.warning(f"Campo(s) obrigatório(s): {', '.join(faltando)}")
+    else:
+        data_fmt = data_sel.strftime("%d/%m/%Y")
+        linha = [cobranca, data_fmt, cliente, transportadora, placa,
+                 peso, notas, tipo_carga, operacao, tipo_carro,
+                 tarifa_val, total_val, obs, filial,
+                 usuario.get("USUARIO_EMAIL",""),
+                 datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
+        try:
+            vals_exist = sheet_dados.get_all_values()
+
+            if len(vals_exist) > 1:
+                df_exist = pd.DataFrame(vals_exist[1:], columns=vals_exist[0])
+                df_exist.columns = [c.strip().upper() for c in df_exist.columns]
+
+                colunas_linha = [
+                    "COBRANÇA", "DATA", "CLIENTE", "TRANSPORTADORA", "PLACA",
+                    "PESO", "NOTAS FISCAIS", "TIPO CARGA", "OPERAÇÃO",
+                    "TIPO DE CARRO", "TARIFA", "TOTAL A COBRAR", "OBSERVAÇÃO",
+                    "FILIAL", "USUARIO_EMAIL", "ULTIMO_LOGIN"
+                ]
+
+                for col in colunas_linha:
+                    if col not in df_exist.columns:
+                        df_exist[col] = ""
+
+                chave_nova = "|".join([str(v).strip() for v in linha])
+                chaves_existentes = df_exist[colunas_linha].fillna("").astype(str).apply(
+                    lambda r: "|".join([x.strip() for x in r.tolist()]), axis=1
+                )
+
+                if chave_nova in set(chaves_existentes):
+                    st.warning("⚠️ Registro duplicado detectado. Nada foi salvo.")
+                else:
+                    sheet_dados.append_row(linha)
+                    st.success("✅ Agendamento salvo com sucesso!")
+                    st.cache_data.clear()
+            else:
                 sheet_dados.append_row(linha)
                 st.success("✅ Agendamento salvo com sucesso!")
                 st.cache_data.clear()
-            except Exception as e:
-                st.error(f"Erro ao salvar: {e}")
+
+        except Exception as e:
+            st.error(f"Erro ao salvar: {e}")
+
 
     # ----------------------------------------------------------------
     # RELATÓRIO
