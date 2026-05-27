@@ -172,14 +172,27 @@ st.markdown(f"""
         z-index: 1;
     }}
 
-    /* Botões */
+    /* BOTÕES - VISÍVEIS COM FUNDO E CENTRALIZADOS */
     .stButton > button {{
-        border-radius: 5px !important;
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%) !important;
+        border: 2px solid #3498db !important;
+        border-radius: 10px !important;
+        color: #ffffff !important;
         font-weight: bold !important;
-        font-size: 0.9rem !important;
-        height: 2.5rem !important;
-        border: none !important;
+        font-size: 1.05rem !important;
+        padding: 12px 24px !important;
+        height: auto !important;
+        min-height: 50px !important;
         cursor: pointer !important;
+        width: 100% !important;
+        text-align: center !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+    }}
+
+    .stButton > button:hover {{
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4) !important;
     }}
 
     /* Tabela */
@@ -523,10 +536,16 @@ def tela_principal():
     # ----------------------------------------------------------------
     # BOTÕES
     # ----------------------------------------------------------------
-    bc1,bc2,bc3,_ = st.columns([1.5,1.5,1.5,3])
-    with bc1: salvar_btn    = st.button("💾 SALVAR AGENDAMENTO", use_container_width=True)
-    with bc2: relatorio_btn = st.button("📊 GERAR RELATÓRIO",    use_container_width=True)
-    with bc3: refresh_btn   = st.button("🔄 ATUALIZAR TABELA",   use_container_width=True)
+    _, bc1, bc2, bc3, _ = st.columns([1, 1.5, 1.5, 1.5, 1])
+
+    with bc1:
+        salvar_btn = st.button("💾 SALVAR AGENDAMENTO", use_container_width=True)
+
+    with bc2:
+        relatorio_btn = st.button("📊 GERAR RELATÓRIO", use_container_width=True)
+
+    with bc3:
+        refresh_btn = st.button("🔄 ATUALIZAR TABELA", use_container_width=True)
 
     # ----------------------------------------------------------------
     # SALVAR
