@@ -551,25 +551,26 @@ def tela_principal():
     st.markdown('</div>', unsafe_allow_html=True)
 
     esp1, bc1, bc2, bc3, esp2 = st.columns([1,1.5,1.5,1.5,1])
+    
     with bc1:
         salvar_btn = st.button(
             "💾 SALVAR AGENDAMENTO",
             use_container_width=True,
-            key="btn_salvar"
+            key="btn_salvar"    # ← ESSA KEY APLICA A COR VERDE
         )
 
     with bc2:
         relatorio_btn = st.button(
-            "📊 GERAR RELATÓRIO",
+             "📊 GERAR RELATÓRIO",
             use_container_width=True,
-            key="btn_relatorio"
+            key="btn_relatorio"    # ← ESSA KEY APLICA A COR AZUL
         )
 
     with bc3:
         refresh_btn = st.button(
             "🔄 ATUALIZAR TABELA",
             use_container_width=True,
-            key="btn_atualizar"
+            key="btn_atualizar"    # ← ESSA KEY APLICA A COR LARANJA
         )
 
     faltando = []
