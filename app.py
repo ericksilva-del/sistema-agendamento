@@ -172,27 +172,14 @@ st.markdown(f"""
         z-index: 1;
     }}
 
-    /* BOTÕES - VISÍVEIS COM FUNDO E CENTRALIZADOS */
+    /* Botões */
     .stButton > button {{
-        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%) !important;
-        border: 2px solid #3498db !important;
-        border-radius: 10px !important;
-        color: #ffffff !important;
+        border-radius: 5px !important;
         font-weight: bold !important;
-        font-size: 1.05rem !important;
-        padding: 12px 24px !important;
-        height: auto !important;
-        min-height: 50px !important;
+        font-size: 0.9rem !important;
+        height: 2.5rem !important;
+        border: none !important;
         cursor: pointer !important;
-        width: 100% !important;
-        text-align: center !important;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
-    }}
-
-    .stButton > button:hover {{
-        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4) !important;
     }}
 
     /* Tabela */
@@ -536,40 +523,60 @@ def tela_principal():
     # ----------------------------------------------------------------
     # BOTÕES
     # ----------------------------------------------------------------
-    _, bc1, bc2, bc3, _ = st.columns([1, 1.5, 1.5, 1.5, 1])
-
-    with bc1:
-        salvar_btn = st.button("💾 SALVAR AGENDAMENTO", use_container_width=True)
-
-    with bc2:
-        relatorio_btn = st.button("📊 GERAR RELATÓRIO", use_container_width=True)
-
-    with bc3:
-        refresh_btn = st.button("🔄 ATUALIZAR TABELA", use_container_width=True)
+    bc1,bc2,bc3,_ = st.columns([1.5,1.5,1.5,3])
+    with bc1: salvar_btn    = st.button("💾 SALVAR AGENDAMENTO", use_container_width=True)
+    with bc2: relatorio_btn = st.button("📊 GERAR RELATÓRIO",    use_container_width=True)
+    with bc3: refresh_btn   = st.button("🔄 ATUALIZAR TABELA",   use_container_width=True)
 
     # ----------------------------------------------------------------
     # SALVAR
     # ----------------------------------------------------------------
     if salvar_btn:
-        obrig = {"Cobrança":cobranca,"Cliente":cliente,"Transportadora":transportadora,
-                 "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
-                 "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
-        faltando = [k for k,v in obrig.items() if not str(v).strip()]
-        if faltando:
-            st.warning(f"Campo(s) obrigatório(s): {', '.join(faltando)}")
-        else:
-            data_fmt = data_sel.strftime("%d/%m/%Y")
-            linha = [cobranca, data_fmt, cliente, transportadora, placa,
-                     peso, notas, tipo_carga, operacao, tipo_carro,
-                     tarifa_val, total_val, obs, filial,
-                     usuario.get("USUARIO_EMAIL",""),
-                     datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
-            try:
-                sheet_dados.append_row(linha)
-                st.success("✅ Agendamento salvo com sucesso!")
-                st.cache_data.clear()
-            except Exception as e:
-                st.error(f"Erro ao salvar: {e}")
+            obrig = {"Cobrança":cobranca,"Cliente":cliente,"Transportadora":transportadora,
+                     "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
+                     "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
+            faltando = [k for k,v in obrig.items() if not str(v).strip()]
+            if faltando:
+                st.warning(f"Campo(s) obrigatório(s): {', '.join(faltando)}")
+            else:
+                data_fmt = data_sel.strftime("%d/%m/%Y")
+                
+                # 🔍 VERIFICAR DUPLICIDADE
+                try:
+                    vals_existente = sheet_dados.get_all_values()
+                    duplicado = False
+                    
+                    # Checa linha por linha se já existe registro igual
+                    for linha_existente in vals_existente[1:]:  # Ignora cabeçalho
+                        if len(linha_existente) >= 10:
+                            # Compara campos principais (índices 0-9)
+                            if (linha_existente[0].strip().upper() == cobranca.strip().upper() and
+                                linha_existente[1].strip() == data_fmt and
+                                linha_existente[2].strip().upper() == cliente.strip().upper() and
+                                linha_existente[3].strip().upper() == transportadora.strip().upper() and
+                                linha_existente[4].strip().upper() == placa.strip().upper() and
+                                linha_existente[5].strip() == peso and
+                                linha_existente[6].strip() == notas and
+                                linha_existente[7].strip().upper() == tipo_carga.strip().upper() and
+                                linha_existente[8].strip().upper() == operacao.strip().upper() and
+                                linha_existente[9].strip().upper() == tipo_carro.strip().upper()):
+                                duplicado = True
+                                break
+                    
+                    if duplicado:
+                        st.error("⚠️ **ERRO: Registro duplicado!** Já existe um agendamento com esses mesmos dados.")
+                    else:
+                        linha = [cobranca, data_fmt, cliente, transportadora, placa,
+                                 peso, notas, tipo_carga, operacao, tipo_carro,
+                                 tarifa_val, total_val, obs, filial,
+                                 usuario.get("USUARIO_EMAIL",""),
+                                 datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
+                        sheet_dados.append_row(linha)
+                        st.success("✅ Agendamento salvo com sucesso!")
+                        st.cache_data.clear()
+                        
+                except Exception as e:
+                    st.error(f"Erro ao verificar/salvar: {e}")
 
     # ----------------------------------------------------------------
     # RELATÓRIO
