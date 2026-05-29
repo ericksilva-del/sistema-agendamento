@@ -532,25 +532,51 @@ def tela_principal():
     # SALVAR
     # ----------------------------------------------------------------
     if salvar_btn:
-        obrig = {"Cobrança":cobranca,"Cliente":cliente,"Transportadora":transportadora,
-                 "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
-                 "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
-        faltando = [k for k,v in obrig.items() if not str(v).strip()]
-        if faltando:
-            st.warning(f"Campo(s) obrigatório(s): {', '.join(faltando)}")
-        else:
-            data_fmt = data_sel.strftime("%d/%m/%Y")
-            linha = [cobranca, data_fmt, cliente, transportadora, placa,
-                     peso, notas, tipo_carga, operacao, tipo_carro,
-                     tarifa_val, total_val, obs, filial,
-                     usuario.get("USUARIO_EMAIL",""),
-                     datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
-            try:
-                sheet_dados.append_row(linha)
-                st.success("✅ Agendamento salvo com sucesso!")
-                st.cache_data.clear()
-            except Exception as e:
-                st.error(f"Erro ao salvar: {e}")
+            obrig = {"Cobrança":cobranca,"Cliente":cliente,"Transportadora":transportadora,
+                     "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
+                     "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
+            faltando = [k for k,v in obrig.items() if not str(v).strip()]
+            if faltando:
+                st.warning(f"Campo(s) obrigatório(s): {', '.join(faltando)}")
+            else:
+                data_fmt = data_sel.strftime("%d/%m/%Y")
+                
+                # 🔍 VERIFICAR DUPLICIDADE
+                try:
+                    vals_existente = sheet_dados.get_all_values()
+                    duplicado = False
+                    
+                    # Checa linha por linha se já existe registro igual
+                    for linha_existente in vals_existente[1:]:  # Ignora cabeçalho
+                        if len(linha_existente) >= 10:
+                            # Compara campos principais (índices 0-9)
+                            if (linha_existente[0].strip().upper() == cobranca.strip().upper() and
+                                linha_existente[1].strip() == data_fmt and
+                                linha_existente[2].strip().upper() == cliente.strip().upper() and
+                                linha_existente[3].strip().upper() == transportadora.strip().upper() and
+                                linha_existente[4].strip().upper() == placa.strip().upper() and
+                                linha_existente[5].strip() == peso and
+                                linha_existente[6].strip() == notas and
+                                linha_existente[7].strip().upper() == tipo_carga.strip().upper() and
+                                linha_existente[8].strip().upper() == operacao.strip().upper() and
+                                linha_existente[9].strip().upper() == tipo_carro.strip().upper()):
+                                duplicado = True
+                                break
+                    
+                    if duplicado:
+                        st.error("⚠️ **ERRO: Registro duplicado!** Já existe um agendamento com esses mesmos dados.")
+                    else:
+                        linha = [cobranca, data_fmt, cliente, transportadora, placa,
+                                 peso, notas, tipo_carga, operacao, tipo_carro,
+                                 tarifa_val, total_val, obs, filial,
+                                 usuario.get("USUARIO_EMAIL",""),
+                                 datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
+                        sheet_dados.append_row(linha)
+                        st.success("✅ Agendamento salvo com sucesso!")
+                        st.cache_data.clear()
+                        
+                except Exception as e:
+                    st.error(f"Erro ao verificar/salvar: {e}")
 
     # ----------------------------------------------------------------
     # RELATÓRIO
