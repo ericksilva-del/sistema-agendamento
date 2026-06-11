@@ -645,7 +645,11 @@ def tela_principal():
         if len(vals) > 1:
             df   = pd.DataFrame(vals[1:], columns=vals[0])
             df.columns = [c.strip().upper() for c in df.columns]
-            df_f = df[df["FILIAL"].str.upper() == filial.upper()].iloc[::-1].reset_index(drop=True)
+            df["DATA_SORT"] = pd.to_datetime(df["DATA"], format="%d/%m/%Y", errors="coerce")
+            df_f = (df[df["FILIAL"].str.upper() == filial.upper()]
+                      .sort_values("DATA_SORT", ascending=False)
+                      .drop(columns=["DATA_SORT"])
+                      .reset_index(drop=True))
             df_f.index += 1
             df_f.index.name = "#"
             cols = ["COBRANÇA","DATA","CLIENTE","TRANSPORTADORA","PLACA","PESO",
