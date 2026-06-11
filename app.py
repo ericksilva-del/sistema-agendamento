@@ -566,17 +566,15 @@ def tela_principal():
                     vals_existente = sheet_dados.get_all_values()
                     duplicado = False
                     
-                    # Checa linha por linha se já existe registro igual
                     for linha_existente in vals_existente[1:]:  # Ignora cabeçalho
                         if len(linha_existente) >= 10:
-                            # Compara campos principais (índices 0-9)
+                            # Compara sem DATA, mas COM OPERAÇÃO como diferenciador
                             if (linha_existente[0].strip().upper() == cobranca.strip().upper() and
-                                linha_existente[1].strip() == data_fmt and
                                 linha_existente[2].strip().upper() == cliente.strip().upper() and
                                 linha_existente[3].strip().upper() == transportadora.strip().upper() and
                                 linha_existente[4].strip().upper() == placa.strip().upper() and
-                                linha_existente[5].strip() == peso and
-                                linha_existente[6].strip() == notas and
+                                linha_existente[5].strip()         == peso.strip() and
+                                linha_existente[6].strip()         == notas.strip() and
                                 linha_existente[7].strip().upper() == tipo_carga.strip().upper() and
                                 linha_existente[8].strip().upper() == operacao.strip().upper() and
                                 linha_existente[9].strip().upper() == tipo_carro.strip().upper()):
