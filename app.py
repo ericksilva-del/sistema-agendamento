@@ -38,6 +38,7 @@ caminhao_src    = img_to_b64("caminhão.png",     "image/png")
 empilhadeira_src= img_to_b64("empilhadeira.png", "image/png")
 gif_src         = img_to_b64("rodape.gif",       "image/gif")
 
+# ===
 # =====================================================================
 # --- CSS GLOBAL ---
 # =====================================================================
