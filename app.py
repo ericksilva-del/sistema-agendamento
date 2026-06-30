@@ -625,29 +625,38 @@ def tela_principal():
 
                 data_fmt = data_sel.strftime("%d/%m/%Y")
 
-                # 🔍 VERIFICAR DUPLICIDADE via CHAVE (CLIENTE + TRANSPORTADORA + PLACA + PESO + DATA)
+                # 🔍 VERIFICAR DUPLICIDADE via CHAVE (NF + PLACA + FILIAL)
+                # Bloqueia a mesma NF na mesma placa dentro da mesma filial, em qualquer data.
+                # Exceção: Cobrança = SIMBOLOGIA não entra na checagem (permite repetir).
                 try:
-                    chave_nova = gerar_chave(cliente_n, transportadora_n, placa_n, peso_n, data_fmt)
+                    is_simbologia = cobranca_n.strip().upper() == "SIMBOLOGIA"
 
-                    vals_existente = sheet_dados.get_all_values()
-                    duplicado = False
+                    if is_simbologia:
+                        duplicado = False
+                    else:
+                        chave_nova = gerar_chave(notas_n, placa_n, filial)
 
-                    for linha_existente in vals_existente[1:]:  # Ignora cabeçalho
-                        if len(linha_existente) >= 10:
-                            chave_existente = gerar_chave(
-                                linha_existente[2],   # Cliente
-                                linha_existente[3],   # Transportadora
-                                normalizar_placa(linha_existente[4]),  # Placa
-                                linha_existente[5],   # Peso
-                                linha_existente[1],   # Data
-                            )
-                            if chave_existente == chave_nova:
-                                duplicado = True
-                                break
+                        vals_existente = sheet_dados.get_all_values()
+                        duplicado = False
+
+                        for linha_existente in vals_existente[1:]:  # Ignora cabeçalho
+                            if len(linha_existente) >= 14:
+                                cobranca_existente = linha_existente[0].strip().upper()
+                                if cobranca_existente == "SIMBOLOGIA":
+                                    continue  # SIMBOLOGIA não entra na comparação
+
+                                chave_existente = gerar_chave(
+                                    linha_existente[6],    # Notas Fiscais
+                                    normalizar_placa(linha_existente[4]),  # Placa
+                                    linha_existente[13],   # Filial
+                                )
+                                if chave_existente == chave_nova:
+                                    duplicado = True
+                                    break
 
                     if duplicado:
                         st.error("⚠️ **ERRO: Registro duplicado!** Já existe um agendamento com a mesma "
-                                  "combinação de Cliente, Transportadora, Placa, Peso e Data.")
+                                  "Nota Fiscal e Placa nesta filial.")
                     else:
                         linha = [cobranca_n, data_fmt, cliente_n, transportadora_n, placa_n,
                                  peso_n, notas_n, tipo_carga_n, operacao_n, tipo_carro_n,
