@@ -629,40 +629,49 @@ def tela_principal():
                 # Bloqueia a mesma NF na mesma placa dentro da mesma filial, em qualquer data.
                 # Exceção: Cobrança = SIMBOLOGIA não entra na checagem (permite repetir).
                 try:
-                    is_simbologia = cobranca_n.strip().upper() == "SIMBOLOGIA"
+                    is_simbologia = normalizar_campo(cobranca_n) == "SIMBOLOGIA"
 
                     if is_simbologia:
                         duplicado = False
                     else:
-                        chave_nova = gerar_chave(notas_n, placa_n, filial)
-
                         vals_existente = sheet_dados.get_all_values()
                         duplicado = False
 
                         for linha_existente in vals_existente[1:]:  # Ignora cabeçalho
-                            if len(linha_existente) >= 14:
-                                cobranca_existente = linha_existente[0].strip().upper()
-                                if cobranca_existente == "SIMBOLOGIA":
-                                    continue  # SIMBOLOGIA não entra na comparação
+                            if len(linha_existente) < 14:
+                                continue
 
-                                chave_existente = gerar_chave(
-                                    linha_existente[6],    # Notas Fiscais
-                                    normalizar_placa(linha_existente[4]),  # Placa
-                                    linha_existente[13],   # Filial
-                                )
-                                if chave_existente == chave_nova:
-                                    duplicado = True
-                                    break
+                            cobranca_existente = normalizar_campo(linha_existente[0])
+
+                            # SIMBOLOGIA nunca entra na comparação
+                            if cobranca_existente == "SIMBOLOGIA":
+                                continue
+
+                            nf_existente     = limpar_texto(linha_existente[6])
+                            placa_existente  = normalizar_placa(linha_existente[4])
+                            filial_existente = normalizar_campo(linha_existente[13])
+
+                            mesma_nf     = limpar_texto(nf_existente) == limpar_texto(notas_n)
+                            mesma_placa  = placa_existente == placa_n
+                            mesma_filial = filial_existente == normalizar_campo(filial)
+
+                            if mesma_nf and mesma_placa and mesma_filial:
+                                duplicado = True
+                                break
 
                     if duplicado:
-                        st.error("⚠️ **ERRO: Registro duplicado!** Já existe um agendamento com a mesma "
-                                  "Nota Fiscal e Placa nesta filial.")
+                        st.error("⚠️ **ERRO: Registro duplicado!** Já existe um agendamento com a mesma NF + Placa nesta filial (exceto SIMBOLOGIA).")
                     else:
+                        if is_simbologia:
+                            tarifa_val = 30.0
+                            total_val = 30.0
+
                         linha = [cobranca_n, data_fmt, cliente_n, transportadora_n, placa_n,
                                  peso_n, notas_n, tipo_carga_n, operacao_n, tipo_carro_n,
                                  tarifa_val, total_val, obs_n, filial,
                                  usuario.get("USUARIO_EMAIL",""),
                                  datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
+
                         sheet_dados.append_row(linha)
                         st.success("✅ Agendamento salvo com sucesso!")
                         st.cache_data.clear()
