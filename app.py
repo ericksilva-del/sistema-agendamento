@@ -631,7 +631,7 @@ def tela_principal():
                 
                 
                 try:
-                    is_simbologia = normalizar_campo(cobranca_n) == "SIMBOLOGIA"
+                    is_simbologia = normalizar_campo(operacao_n) == "SIMBOLOGIA"
 
                     duplicado = False
 
@@ -642,9 +642,9 @@ def tela_principal():
                             if len(linha_existente) < 14:
                                 continue
 
-                            cobranca_existente = normalizar_campo(linha_existente[0])
+                            operacao_existente = normalizar_campo(linha_existente[8])
 
-                            if cobranca_existente == "SIMBOLOGIA":
+                            if operacao_existente == "SIMBOLOGIA":
                                 continue
 
                             nf_existente = limpar_texto(linha_existente[6])
