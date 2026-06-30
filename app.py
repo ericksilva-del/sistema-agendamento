@@ -10,6 +10,8 @@ from hashlib import sha256
 import io
 import base64
 import os
+import re
+import unicodedata
 
 # =====================================================================
 # --- CONFIGURAÇÃO DA PÁGINA ---
@@ -317,6 +319,50 @@ def parse_moeda(v):
 
 
 # =====================================================================
+# --- V4: SEGURANÇA E PADRONIZAÇÃO ---
+# =====================================================================
+def limpar_texto(texto):
+    """Remove espaços extras (início/fim/duplicados internos)."""
+    if texto is None:
+        return ""
+    return " ".join(str(texto).strip().split())
+
+def remover_acentos(texto):
+    """Remove acentuação (ex: São Paulo -> Sao Paulo)."""
+    if texto is None:
+        return ""
+    nfkd = unicodedata.normalize("NFKD", str(texto))
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+def normalizar_campo(texto):
+    """Limpeza + maiúsculas + sem acento. Usado na CHAVE para evitar falso negativo."""
+    return remover_acentos(limpar_texto(texto)).upper()
+
+def normalizar_placa(placa):
+    """Remove tudo que não é letra/número e converte para maiúsculas. Ex: eri-1234 -> ERI1234"""
+    if placa is None:
+        return ""
+    return re.sub(r"[^A-Za-z0-9]", "", str(placa)).upper()
+
+def validar_peso(peso_str):
+    """
+    Valida formato brasileiro de peso.
+    Ponto de milhar é OPCIONAL, mas a vírgula com 2 casas decimais é OBRIGATÓRIA.
+    Aceita:  1.500,00  |  1500,00  |  850,00
+    Rejeita: 1500  |  150000  |  1500.00  |  1500,0  |  1500,000
+    """
+    if peso_str is None:
+        return False
+    padrao = r"^\d{1,3}(\.\d{3})*,\d{2}$|^\d+,\d{2}$"
+    return bool(re.match(padrao, str(peso_str).strip()))
+
+def gerar_chave(*campos):
+    """Gera hash SHA-256 a partir dos campos normalizados, usado para bloquear duplicidade."""
+    base = "|".join(normalizar_campo(c) for c in campos)
+    return sha256(base.encode()).hexdigest()
+
+
+# =====================================================================
 # --- USUÁRIOS ---
 # =====================================================================
 def get_usuarios_df():
@@ -512,7 +558,9 @@ def tela_principal():
     with c5: placa          = st.text_input("Placa",                                                   key="f_pla")
 
     c1,c2,c3,c4,c5 = st.columns([1,1,2,1.5,1])
-    with c1: peso       = st.text_input("Peso (kg)",                                              key="f_pes")
+    with c1: peso       = st.text_input("Peso (kg)", placeholder="Ex.: 1500,00 ou 1.500,00",
+                                         help="Use vírgula com 2 casas decimais. O ponto de milhar é opcional. Ex.: 1500,00 ou 1.500,00",
+                                         key="f_pes")
     with c2: notas      = st.text_input("Notas Fiscais",                                          key="f_not")
     with c3: tipo_carga = st.selectbox("Tipo Carga",     [""] + listas.get("TIPO CARGA",[]),      key="f_tca")
     with c4: operacao   = st.selectbox("Operação",       [""] + listas.get("OPERAÇÃO",[]),        key="f_ope")
@@ -556,43 +604,60 @@ def tela_principal():
                      "Placa":placa,"Peso":peso,"Notas Fiscais":notas,
                      "Tipo Carga":tipo_carga,"Operação":operacao,"Tipo de Carro":tipo_carro}
             faltando = [k for k,v in obrig.items() if not str(v).strip()]
+
             if faltando:
                 st.warning(f"Campo(s) obrigatório(s): {', '.join(faltando)}")
+            elif not validar_peso(peso):
+                st.error("⚠️ **Peso em formato inválido.** Use vírgula com 2 casas decimais, ex.: 1500,00 ou "
+                          "1.500,00 (não use 1500, 150000 ou 1500.00).")
             else:
+                # --- Limpeza e normalização dos campos antes de salvar ---
+                cobranca_n       = limpar_texto(cobranca)
+                cliente_n        = limpar_texto(cliente)
+                transportadora_n = limpar_texto(transportadora)
+                placa_n          = normalizar_placa(placa)
+                peso_n           = limpar_texto(peso)
+                notas_n          = limpar_texto(notas)
+                tipo_carga_n     = limpar_texto(tipo_carga)
+                operacao_n       = limpar_texto(operacao)
+                tipo_carro_n     = limpar_texto(tipo_carro)
+                obs_n            = limpar_texto(obs)
+
                 data_fmt = data_sel.strftime("%d/%m/%Y")
-                
-                # 🔍 VERIFICAR DUPLICIDADE
+
+                # 🔍 VERIFICAR DUPLICIDADE via CHAVE (CLIENTE + TRANSPORTADORA + PLACA + PESO + DATA)
                 try:
+                    chave_nova = gerar_chave(cliente_n, transportadora_n, placa_n, peso_n, data_fmt)
+
                     vals_existente = sheet_dados.get_all_values()
                     duplicado = False
-                    
+
                     for linha_existente in vals_existente[1:]:  # Ignora cabeçalho
                         if len(linha_existente) >= 10:
-                            # Compara sem DATA, mas COM OPERAÇÃO como diferenciador
-                            if (linha_existente[0].strip().upper() == cobranca.strip().upper() and
-                                linha_existente[2].strip().upper() == cliente.strip().upper() and
-                                linha_existente[3].strip().upper() == transportadora.strip().upper() and
-                                linha_existente[4].strip().upper() == placa.strip().upper() and
-                                linha_existente[5].strip()         == peso.strip() and
-                                linha_existente[6].strip()         == notas.strip() and
-                                linha_existente[7].strip().upper() == tipo_carga.strip().upper() and
-                                linha_existente[8].strip().upper() == operacao.strip().upper() and
-                                linha_existente[9].strip().upper() == tipo_carro.strip().upper()):
+                            chave_existente = gerar_chave(
+                                linha_existente[2],   # Cliente
+                                linha_existente[3],   # Transportadora
+                                normalizar_placa(linha_existente[4]),  # Placa
+                                linha_existente[5],   # Peso
+                                linha_existente[1],   # Data
+                            )
+                            if chave_existente == chave_nova:
                                 duplicado = True
                                 break
-                    
+
                     if duplicado:
-                        st.error("⚠️ **ERRO: Registro duplicado!** Já existe um agendamento com esses mesmos dados.")
+                        st.error("⚠️ **ERRO: Registro duplicado!** Já existe um agendamento com a mesma "
+                                  "combinação de Cliente, Transportadora, Placa, Peso e Data.")
                     else:
-                        linha = [cobranca, data_fmt, cliente, transportadora, placa,
-                                 peso, notas, tipo_carga, operacao, tipo_carro,
-                                 tarifa_val, total_val, obs, filial,
+                        linha = [cobranca_n, data_fmt, cliente_n, transportadora_n, placa_n,
+                                 peso_n, notas_n, tipo_carga_n, operacao_n, tipo_carro_n,
+                                 tarifa_val, total_val, obs_n, filial,
                                  usuario.get("USUARIO_EMAIL",""),
                                  datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
                         sheet_dados.append_row(linha)
                         st.success("✅ Agendamento salvo com sucesso!")
                         st.cache_data.clear()
-                        
+
                 except Exception as e:
                     st.error(f"Erro ao verificar/salvar: {e}")
 
