@@ -628,31 +628,31 @@ def tela_principal():
                 # 🔍 VERIFICAR DUPLICIDADE via CHAVE (NF + PLACA + FILIAL)
                 # Bloqueia a mesma NF na mesma placa dentro da mesma filial, em qualquer data.
                 # Exceção: Cobrança = SIMBOLOGIA não entra na checagem (permite repetir).
+                
+                
                 try:
                     is_simbologia = normalizar_campo(cobranca_n) == "SIMBOLOGIA"
 
-                    if is_simbologia:
-                        duplicado = False
-                    else:
-                        vals_existente = sheet_dados.get_all_values()
-                        duplicado = False
+                    duplicado = False
 
-                        for linha_existente in vals_existente[1:]:  # Ignora cabeçalho
+                    if not is_simbologia:
+                        vals_existente = sheet_dados.get_all_values()
+
+                        for linha_existente in vals_existente[1:]:
                             if len(linha_existente) < 14:
                                 continue
 
                             cobranca_existente = normalizar_campo(linha_existente[0])
 
-                            # SIMBOLOGIA nunca entra na comparação
                             if cobranca_existente == "SIMBOLOGIA":
                                 continue
 
-                            nf_existente     = limpar_texto(linha_existente[6])
-                            placa_existente  = normalizar_placa(linha_existente[4])
+                            nf_existente = limpar_texto(linha_existente[6])
+                            placa_existente = normalizar_placa(linha_existente[4])
                             filial_existente = normalizar_campo(linha_existente[13])
 
-                            mesma_nf     = limpar_texto(nf_existente) == limpar_texto(notas_n)
-                            mesma_placa  = placa_existente == placa_n
+                            mesma_nf = limpar_texto(nf_existente) == limpar_texto(notas_n)
+                            mesma_placa = placa_existente == placa_n
                             mesma_filial = filial_existente == normalizar_campo(filial)
 
                             if mesma_nf and mesma_placa and mesma_filial:
@@ -660,17 +660,34 @@ def tela_principal():
                                 break
 
                     if duplicado:
-                        st.error("⚠️ **ERRO: Registro duplicado!** Já existe um agendamento com a mesma NF + Placa nesta filial (exceto SIMBOLOGIA).")
+                        st.error("⚠️ ERRO: Registro duplicado! Já existe um agendamento com a mesma NF + Placa nesta filial (exceto SIMBOLOGIA).")
+
                     else:
+                        tarifa_val = 0
+                        total_val = 0
+
                         if is_simbologia:
                             tarifa_val = 30.0
                             total_val = 30.0
 
-                        linha = [cobranca_n, data_fmt, cliente_n, transportadora_n, placa_n,
-                                 peso_n, notas_n, tipo_carga_n, operacao_n, tipo_carro_n,
-                                 tarifa_val, total_val, obs_n, filial,
-                                 usuario.get("USUARIO_EMAIL",""),
-                                 datetime.now().strftime("%d/%m/%Y %H:%M:%S")]
+                        linha = [
+                            cobranca_n,
+                            data_fmt,
+                            cliente_n,
+                            transportadora_n,
+                            placa_n,
+                            peso_n,
+                            notas_n,
+                            tipo_carga_n,
+                            operacao_n,
+                            tipo_carro_n,
+                            tarifa_val,
+                            total_val,
+                            obs_n,
+                            filial,
+                            usuario.get("USUARIO_EMAIL", ""),
+                            datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                        ]
 
                         sheet_dados.append_row(linha)
                         st.success("✅ Agendamento salvo com sucesso!")
