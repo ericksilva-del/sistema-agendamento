@@ -516,8 +516,15 @@ def calcular_tarifa(operacao, cliente, peso_str):
     if op == "SIMBOLOGIA":         return 30.0, 30.0
     if cl == "AMAGGI (JANELA <6810KG)": return 150.0, 150.0
     tarifa = parse_moeda(banco_tarifas.get(cl, "0"))
-    try:    peso = float(str(peso_str).replace(",",".")) if peso_str else 0.0
-    except: peso = 0.0
+    try:
+        peso = float(
+            str(peso_str)
+            .replace(".", "")
+            .replace(",", ".")
+        ) if peso_str else 0.0
+    except:
+        peso = 0.0
+    
     return tarifa, (peso / 1000) * tarifa
 
 
@@ -663,12 +670,12 @@ def tela_principal():
                         st.error("⚠️ ERRO: Registro duplicado! Já existe um agendamento com a mesma NF + Placa nesta filial (exceto SIMBOLOGIA).")
 
                     else:
-                        tarifa_val = 0
-                        total_val = 0
-
-                        if is_simbologia:
-                            tarifa_val = 30.0
-                            total_val = 30.0
+                        # Calcula a tarifa conforme os dados informados
+                        tarifa_val, total_val = calcular_tarifa(
+                            operacao_n,
+                            cliente_n,
+                            peso_n
+                        )
 
                         linha = [
                             cobranca_n,
